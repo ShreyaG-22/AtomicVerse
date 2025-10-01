@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quizzes - AtomicVerse{% endblock %}
+
+{% block content %}
+<!-- Quiz Data Container for Django Template Variables -->
+<div id="quiz-data" 
+     data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+     data-csrf-token="{{ csrf_token }}"
+     data-submit-url="{% url 'submit_quiz' %}">
+</div>
+
+<div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <div class="atom-logo">
+                <div class="nucleus"></div>
+                <div class="orbit orbit1"></div>
+                <div class="orbit orbit2"></div>
+                <div class="electron"></div>
+            </div>
+            <h1>AtomicVerse</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'home' %}">Periodic Table</a></li>
+                <li><a href="{% url 'mnemonics_hub' %}">Mnemonics Hub</a></li>
+                <li><a href="{% url 'quizzes' %}" class="active">Quizzes</a></li>
+                <li><a href="{% url 'profile' %}">My Profile</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <div class="user-auth">
+                {% if not user.is_authenticated %}
+                <div id="score-message" class="message-box">
+                    <p>📊 Sign in to save your score and track your progress!</p>
+                </div>
+                <div id="auth-buttons">
+                    <a href="{% url 'profile' %}" class="btn-secondary">Login</a>
+                    <a href="{% url 'profile' %}" class="btn-primary">Sign Up</a>
+                </div>
+                {% else %}
+                <div id="user-greeting">
+                    <span>🎯 Welcome, {{ user.username }}! Ready to test your knowledge?</span>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="page-content">
+            <h2>Periodic Table Quizzes</h2>
+            <p style="margin-bottom: 20px; color: var(--text-light);">Test your knowledge of chemical elements with our interactive quizzes!</p>
+            
+            <div class="quiz-levels">
+                <div class="level-card" data-level="beginner">
+                    <div class="level-icon">🌱</div>
+                    <h3>Beginner</h3>
+                    <p>10 questions • 3 minutes</p>
+                    <p>Perfect for chemistry newcomers. Covers basic element symbols, names, and properties.</p>
+                    <div class="level-difficulty">
+                        <span class="difficulty-label">Easy</span>
+                        <div class="difficulty-bar">
+                            <div class="difficulty-fill" style="width: 33%"></div>
+                        </div>
+                    </div>
+                    <button class="btn-primary start-quiz" onclick="startQuiz('beginner')">Start Quiz</button>
+                </div>
+                
+                <div class="level-card" data-level="intermediate">
+                    <div class="level-icon">⚡</div>
+                    <h3>Intermediate</h3>
+                    <p>10 questions • 3 minutes</p>
+                    <p>For those with basic chemistry knowledge. Tests element groups, properties, and configurations.</p>
+                    <div class="level-difficulty">
+                        <span class="difficulty-label">Medium</span>
+                        <div class="difficulty-bar">
+                            <div class="difficulty-fill" style="width: 66%"></div>
+                        </div>
+                    </div>
+                    <button class="btn-primary start-quiz" onclick="startQuiz('intermediate')">Start Quiz</button>
+                </div>
+                
+                <div class="level-card" data-level="advanced">
+                    <div class="level-icon">🔥</div>
+                    <h3>Advanced</h3>
+                    <p>10 questions • 3 minutes</p>
+                    <p>Challenge yourself with detailed atomic properties, configurations, and chemical behavior.</p>
+                    <div class="level-difficulty">
+                        <span class="difficulty-label">Hard</span>
+                        <div class="difficulty-bar">
+                            <div class="difficulty-fill" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <button class="btn-primary start-quiz" onclick="startQuiz('advanced')">Start Quiz</button>
+                </div>
+            </div>
+
+            <!-- Quiz Container (hidden by default) -->
+            <div id="quiz-container" class="hidden">
+                <div class="quiz-header">
+                    <h3 id="quiz-title">Quiz</h3>
+                    <div class="quiz-info">
+                        <span id="question-counter">Question 1/10</span>
+                        <span id="timer">03:00</span>
+                    </div>
+                </div>
+                
+                <div class="quiz-content">
+                    <div id="question-container">
+                        <p id="question-text">Question text will appear here</p>
+                        <div id="options-container">
+                            <!-- Options will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <div class="quiz-navigation">
+                        <button id="prev-btn" class="btn-secondary" onclick="showPreviousQuestion()">← Previous</button>
+                        <div class="quiz-progress">
+                            <div class="progress-bar">
+                                <div id="progress-fill" class="progress-fill"></div>
+                            </div>
+                        </div>
+                        <button id="next-btn" class="btn-primary" onclick="showNextQuestion()">Next →</button>
+                        <button id="submit-btn" class="btn-primary hidden" onclick="submitQuiz()">Submit Quiz</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Container (hidden by default) -->
+            <div id="results-container" class="hidden">
+                <div class="results-header">
+                    <h3>🎉 Quiz Complete!</h3>
+                    <div id="score-display">
+                        <p>Your score:</p>
+                        <div id="score-value">0</div>
+                        <p>out of 10</p>
+                        <p id="performance-message"></p>
+                    </div>
+                </div>
+                
+                <div class="results-details">
+                    <div class="result-stat">
+                        <span class="stat-label">Time Taken:</span>
+                        <span id="time-taken">0:00</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="stat-label">Difficulty:</span>
+                        <span id="quiz-difficulty">Beginner</span>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <div class="result-stat">
+                        <span class="stat-label">Score Saved:</span>
+                        <span>✅ Yes</span>
+                    </div>
+                    {% else %}
+                    <div class="result-stat">
+                        <span class="stat-label">Score Saved:</span>
+                        <span>❌ No (Sign in to save)</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="results-actions">
+                    <button id="retry-quiz" class="btn-secondary" onclick="retryQuiz()">🔄 Retry Quiz</button>
+                    <button id="back-to-levels" class="btn-primary" onclick="showQuizLevels()">📚 Back to Levels</button>
+                    <a href="{% url 'home' %}" class="btn-secondary">🏠 Back to Periodic Table</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get Django template variables from data attributes
+    const quizDataElement = document.getElementById('quiz-data');
+    const isAuthenticated = quizDataElement.dataset.authenticated === 'true';
+    const csrfToken = quizDataElement.dataset.csrfToken;
+    const submitQuizUrl = quizDataElement.dataset.submitUrl;
+
+    // Quiz state
+    let currentQuiz = {
+        level: '',
+        questions: [],
+        currentQuestionIndex: 0,
+        userAnswers: [],
+        startTime: null,
+        timer: null,
+        timeTaken: 0
+    };
+
+    // Quiz questions data
+    const quizQuestions = {
+        beginner: [
+            {
+                question: "What is the chemical symbol for Gold?",
+                options: ["Go", "Gd", "Au", "Ag"],
+                correctAnswer: 2
+            },
+            {
+                question: "How many elements are in the first period of the periodic table?",
+                options: ["2", "8", "18", "32"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which element has the atomic number 1?",
+                options: ["Helium", "Oxygen", "Hydrogen", "Lithium"],
+                correctAnswer: 2
+            },
+            {
+                question: "What is the lightest noble gas?",
+                options: ["Neon", "Helium", "Argon", "Krypton"],
+                correctAnswer: 1
+            },
+            {
+                question: "Which of these is a halogen?",
+                options: ["Sodium", "Chlorine", "Calcium", "Iron"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the chemical symbol for Iron?",
+                options: ["Ir", "Fe", "In", "Fr"],
+                correctAnswer: 1
+            },
+            {
+                question: "Which element is liquid at room temperature?",
+                options: ["Bromine", "Chlorine", "Iodine", "Fluorine"],
+                correctAnswer: 0
+            },
+            {
+                question: "What is the main component of the air we breathe?",
+                options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+                correctAnswer: 2
+            },
+            {
+                question: "Which element is used in light bulbs?",
+                options: ["Neon", "Argon", "Krypton", "Xenon"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the chemical symbol for Silver?",
+                options: ["Si", "Sv", "Ag", "Au"],
+                correctAnswer: 2
+            }
+        ],
+        intermediate: [
+            {
+                question: "Which element has the highest electronegativity?",
+                options: ["Oxygen", "Fluorine", "Chlorine", "Nitrogen"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the atomic number of Carbon?",
+                options: ["6", "12", "14", "16"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which group of elements are known as alkaline earth metals?",
+                options: ["Group 1", "Group 2", "Group 17", "Group 18"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the electronic configuration of Neon?",
+                options: ["1s² 2s² 2p⁶", "1s² 2s² 2p⁴", "1s² 2s² 2p²", "1s² 2s² 2p⁵"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which element is a semiconductor?",
+                options: ["Copper", "Silicon", "Sodium", "Aluminum"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the state of Mercury at room temperature?",
+                options: ["Solid", "Liquid", "Gas", "Plasma"],
+                correctAnswer: 1
+            },
+            {
+                question: "Which element has the highest melting point?",
+                options: ["Tungsten", "Carbon", "Osmium", "Rhenium"],
+                correctAnswer: 1
+            },
+            {
+                question: "What is the most abundant element in the Earth's crust?",
+                options: ["Oxygen", "Silicon", "Aluminum", "Iron"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which of these is a transition metal?",
+                options: ["Calcium", "Potassium", "Copper", "Magnesium"],
+                correctAnswer: 2
+            },
+            {
+                question: "What is the atomic mass of Sodium approximately?",
+                options: ["11", "23", "35", "39"],
+                correctAnswer: 1
+            }
+        ],
+        advanced: [
+            {
+                question: "Which element has the highest ionization energy?",
+                options: ["Helium", "Hydrogen", "Fluorine", "Neon"],
+                correctAnswer: 0
+            },
+            {
+                question: "What is the electronic configuration of Chromium?",
+                options: ["[Ar] 4s² 3d⁴", "[Ar] 4s¹ 3d⁵", "[Ar] 4s² 3d⁵", "[Ar] 4s¹ 3d⁴"],
+                correctAnswer: 1
+            },
+            {
+                question: "Which element has the largest atomic radius?",
+                options: ["Francium", "Cesium", "Rubidium", "Potassium"],
+                correctAnswer: 0
+            },
+            {
+                question: "What is the oxidation state of Oxygen in OF₂?",
+                options: ["-2", "-1", "+1", "+2"],
+                correctAnswer: 3
+            },
+            {
+                question: "Which element is diamagnetic?",
+                options: ["Oxygen", "Sodium", "Nitrogen", "Neon"],
+                correctAnswer: 3
+            },
+            {
+                question: "What is the hybridization of Carbon in CO₂?",
+                options: ["sp", "sp²", "sp³", "sp³d"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which lanthanide has the highest melting point?",
+                options: ["Lutetium", "Cerium", "Gadolinium", "Dysprosium"],
+                correctAnswer: 0
+            },
+            {
+                question: "What is the most electronegative element?",
+                options: ["Fluorine", "Oxygen", "Chlorine", "Nitrogen"],
+                correctAnswer: 0
+            },
+            {
+                question: "Which element has the highest electron affinity?",
+                options: ["Chlorine", "Fluorine", "Oxygen", "Bromine"],
+                correctAnswer: 0
+            },
+            {
+                question: "What is the coordination number in a face-centered cubic structure?",
+                options: ["6", "8", "12", "14"],
+                correctAnswer: 2
+            }
+        ]
+    };
+
+    function startQuiz(level) {
+        console.log('Starting quiz:', level);
+        document.querySelector('.quiz-levels').classList.add('hidden');
+        document.getElementById('quiz-container').classList.remove('hidden');
+        
+        currentQuiz.level = level;
+        currentQuiz.questions = [...quizQuestions[level]];
+        currentQuiz.currentQuestionIndex = 0;
+        currentQuiz.userAnswers = new Array(currentQuiz.questions.length).fill(null);
+        currentQuiz.startTime = new Date();
+        currentQuiz.timeTaken = 0;
+        
+        // Update quiz title
+        document.getElementById('quiz-title').textContent = `${level.charAt(0).toUpperCase() + level.slice(1)} Level Quiz`;
+        
+        shuffleArray(currentQuiz.questions);
+        startTimer(3 * 60); // 3 minutes
+        displayQuestion();
+    }
+
+    function startTimer(duration) {
+        const timerElement = document.getElementById('timer');
+        let timeLeft = duration;
+        
+        clearInterval(currentQuiz.timer);
+        
+        currentQuiz.timer = setInterval(() => {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            currentQuiz.timeTaken = duration - timeLeft;
+            
+            // Update progress bar
+            updateProgressBar();
+            
+            if (timeLeft <= 0) {
+                clearInterval(currentQuiz.timer);
+                submitQuiz();
+            }
+            
+            timeLeft--;
+        }, 1000);
+    }
+
+    function updateProgressBar() {
+        const progressFill = document.getElementById('progress-fill');
+        if (progressFill) {
+            const progress = ((currentQuiz.currentQuestionIndex + 1) / currentQuiz.questions.length) * 100;
+            progressFill.style.width = `${progress}%`;
+        }
+    }
+
+    function displayQuestion() {
+        const question = currentQuiz.questions[currentQuiz.currentQuestionIndex];
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        
+        if (!questionCounter || !questionText || !optionsContainer) return;
+        
+        // Update question counter
+        questionCounter.textContent = `Question ${currentQuiz.currentQuestionIndex + 1}/${currentQuiz.questions.length}`;
+        
+        // Update question text
+        questionText.textContent = question.question;
+        
+        // Clear and update options
+        optionsContainer.innerHTML = '';
+        question.options.forEach((option, index) => {
+            const optionElement = document.createElement('div');
+            optionElement.className = 'option';
+            if (currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] === index) {
+                optionElement.classList.add('selected');
+            }
+            optionElement.textContent = option;
+            optionElement.onclick = () => selectOption(index);
+            optionsContainer.appendChild(optionElement);
+        });
+        
+        // Update navigation buttons
+        document.getElementById('prev-btn').disabled = currentQuiz.currentQuestionIndex === 0;
+        document.getElementById('next-btn').classList.toggle('hidden', currentQuiz.currentQuestionIndex === currentQuiz.questions.length - 1);
+        document.getElementById('submit-btn').classList.toggle('hidden', currentQuiz.currentQuestionIndex !== currentQuiz.questions.length - 1);
+        
+        // Update progress bar
+        updateProgressBar();
+    }
+
+    function selectOption(optionIndex) {
+        currentQuiz.userAnswers[currentQuiz.currentQuestionIndex] = optionIndex;
+        
+        const options = document.querySelectorAll('.option');
+        options.forEach((option, index) => {
+            if (index === optionIndex) {
+                option.classList.add('selected');
+            } else {
+                option.classList.remove('selected');
+            }
+        });
+    }
+
+    function showPreviousQuestion() {
+        if (currentQuiz.currentQuestionIndex > 0) {
+            currentQuiz.currentQuestionIndex--;
+            displayQuestion();
+        }
+    }
+
+    function showNextQuestion() {
+        if (currentQuiz.currentQuestionIndex < currentQuiz.questions.length - 1) {
+            currentQuiz.currentQuestionIndex++;
+            displayQuestion();
+        }
+    }
+
+    function submitQuiz() {
+        clearInterval(currentQuiz.timer);
+        
+        let score = 0;
+        currentQuiz.questions.forEach((question, index) => {
+            if (currentQuiz.userAnswers[index] === question.correctAnswer) {
+                score++;
+            }
+        });
+        
+        // Save score to database if user is authenticated
+        if (isAuthenticated) {
+            fetch(submitQuizUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    level: currentQuiz.level,
+                    score: score,
+                    total_questions: currentQuiz.questions.length,
+                    time_taken: currentQuiz.timeTaken
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to save quiz score');
+                }
+            })
+            .catch(error => {
+                console.error('Error saving quiz score:', error);
+            });
+        }
+        
+        showQuizResults(score);
+    }
+
+    function showQuizResults(score) {
+        document.getElementById('quiz-container').classList.add('hidden');
+        document.getElementById('results-container').classList.remove('hidden');
+        
+        document.getElementById('score-value').textContent = score;
+        
+        // Update time taken
+        const minutes = Math.floor(currentQuiz.timeTaken / 60);
+        const seconds = currentQuiz.timeTaken % 60;
+        document.getElementById('time-taken').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Update difficulty
+        document.getElementById('quiz-difficulty').textContent = currentQuiz.level.charAt(0).toUpperCase() + currentQuiz.level.slice(1);
+        
+        const performanceMessage = document.getElementById('performance-message');
+        const percentage = (score / currentQuiz.questions.length) * 100;
+        
+        if (percentage >= 90) {
+            performanceMessage.textContent = '🎉 Excellent! You have mastered this level.';
+            performanceMessage.style.color = 'var(--success)';
+        } else if (percentage >= 70) {
+            performanceMessage.textContent = '👍 Good job! You have a solid understanding.';
+            performanceMessage.style.color = 'var(--success)';
+        } else if (percentage >= 50) {
+            performanceMessage.textContent = '💪 Not bad! Keep practicing to improve.';
+            performanceMessage.style.color = 'var(--warning)';
+        } else {
+            performanceMessage.textContent = '📚 Keep studying! You\'ll do better next time.';
+            performanceMessage.style.color = 'var(--danger)';
+        }
+    }
+
+    function retryQuiz() {
+        startQuiz(currentQuiz.level);
+        document.getElementById('results-container').classList.add('hidden');
+    }
+
+    function showQuizLevels() {
+        document.getElementById('results-container').classList.add('hidden');
+        document.querySelector('.quiz-levels').classList.remove('hidden');
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+</script>
+
+<style>
+    .level-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+    }
+    
+    .level-difficulty {
+        margin: 15px 0;
+    }
+    
+    .difficulty-label {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        margin-bottom: 5px;
+        display: block;
+    }
+    
+    .difficulty-bar {
+        width: 100%;
+        height: 6px;
+        background: var(--pastel-blue);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .difficulty-fill {
+        height: 100%;
+        background: var(--secondary);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+    
+    .quiz-progress {
+        flex: 1;
+        margin: 0 20px;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--pastel-blue);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: var(--success);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+    
+    .results-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    #score-value {
+        font-size: 4rem;
+        font-weight: bold;
+        color: var(--secondary);
+        margin: 10px 0;
+    }
+    
+    .results-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 25px 0;
+        padding: 20px;
+        background: rgba(33, 158, 188, 0.05);
+        border-radius: var(--border-radius);
+    }
+    
+    .result-stat {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stat-label {
+        font-weight: 600;
+        color: var(--text);
+    }
+</style>
+{% endblock %}

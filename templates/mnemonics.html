@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mnemonics Hub - AtomicVerse{% endblock %}
+
+{% block content %}
+<!-- Mnemonics Data Container for Django Template Variables -->
+<div id="mnemonics-data" 
+     data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+     data-csrf-token="{{ csrf_token }}">
+</div>
+
+<div class="container">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <div class="atom-logo">
+                <div class="nucleus"></div>
+                <div class="orbit orbit1"></div>
+                <div class="orbit orbit2"></div>
+                <div class="electron"></div>
+            </div>
+            <h1>AtomicVerse</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="{% url 'home' %}">Periodic Table</a></li>
+                <li><a href="{% url 'mnemonics_hub' %}" class="active">Mnemonics Hub</a></li>
+                <li><a href="{% url 'quizzes' %}">Quizzes</a></li>
+                <li><a href="{% url 'profile' %}">My Profile</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header>
+            <div class="user-auth">
+                {% if user.is_authenticated %}
+                <div id="user-greeting">
+                    <span>Hii, <span id="user-name">{{ user.username }}!</span></span>
+                </div>
+                {% else %}
+                <div id="auth-buttons">
+                    <a href="{% url 'profile' %}" class="btn-secondary">Login</a>
+                    <a href="{% url 'profile' %}" class="btn-primary">Sign Up</a>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <div class="page-content">
+            <h2>Mnemonics Hub</h2>
+            
+            {% if user.is_authenticated %}
+            <div id="add-mnemonic-section">
+                <h3>Add Your Mnemonic</h3>
+                <form id="mnemonic-form" method="POST" action="{% url 'add_mnemonic' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="mnemonic-title">Title:</label>
+                        <input type="text" id="mnemonic-title" name="title" required placeholder="Enter a catchy title for your mnemonic">
+                    </div>
+                    <div class="form-group">
+                        <label for="mnemonic-content">Mnemonic:</label>
+                        <textarea id="mnemonic-content" name="content" rows="4" required placeholder="Write your creative mnemonic here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="mnemonic-category">Category:</label>
+                        <select id="mnemonic-category" name="category">
+                            <option value="periodic-table">Periodic Table</option>
+                            <option value="element-groups">Element Groups</option>
+                            <option value="atomic-numbers">Atomic Numbers</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary">Add Mnemonic</button>
+                </form>
+            </div>
+            {% else %}
+            <div id="guest-message" class="message-box">
+                <p>🔐 Sign in to add your mnemonics or explore more mnemonics by others!</p>
+                <p style="margin-top: 10px; font-size: 0.9rem;">Join our community of chemistry enthusiasts!</p>
+            </div>
+            {% endif %}
+
+            <div class="mnemonics-container">
+                <h3>Popular Mnemonics</h3>
+                
+                <!-- Default Mnemonics -->
+                <div class="mnemonic-card">
+                    <h4>🎯 Periods 1-3 Elements</h4>
+                    <p>"Happy Henry Lives Beside Boron Cottage, Near Our Friend Nelly Nancy Mg Allen. Silly Patrick Stays Close. Arthur Kisses Carrie."</p>
+                    <p class="mnemonic-tip"><strong>Tip:</strong> Helps remember the first three periods in order</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: ChemistryTeacher</span>
+                        <div class="actions">
+                            <button class="like-btn" data-mnemonic-id="default1">
+                                ❤️ <span>24</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mnemonic-card">
+                    <h4>🔢 First 20 Elements</h4>
+                    <p>"H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca" - "Happy Henry Likes Beer But Could Not Obtain Four Nuts. Naughty Maggie Always Sings Pop Songs Clearly And Keeps Calm."</p>
+                    <p class="mnemonic-tip"><strong>Tip:</strong> Perfect for memorizing the first 20 elements sequentially</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: ScienceGeek</span>
+                        <div class="actions">
+                            <button class="like-btn" data-mnemonic-id="default2">
+                                ❤️ <span>18</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mnemonic-card">
+                    <h4>⚡ Diatomic Elements</h4>
+                    <p>"HOFBrINCl" - "Have No Fear Of Ice Cold Beer"</p>
+                    <p class="mnemonic-tip"><strong>Tip:</strong> Remember the seven diatomic elements: Hydrogen, Oxygen, Fluorine, Bromine, Iodine, Nitrogen, Chlorine</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: ChemStudent</span>
+                        <div class="actions">
+                            <button class="like-btn" data-mnemonic-id="default3">
+                                ❤️ <span>32</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mnemonic-card">
+                    <h4>🧪 Alkali Metals</h4>
+                    <p>"LiNa K Rb Cs Fr" - "Little Natalie Keeps Rubies Cesium Francium"</p>
+                    <p class="mnemonic-tip"><strong>Tip:</strong> Group 1 elements from top to bottom</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: PeriodicPro</span>
+                        <div class="actions">
+                            <button class="like-btn" data-mnemonic-id="default4">
+                                ❤️ <span>15</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mnemonic-card">
+                    <h4>💨 Noble Gases</h4>
+                    <p>"He Ne Ar Kr Xe Rn" - "He Never Argues; Krypton Xebec Rnon"</p>
+                    <p class="mnemonic-tip"><strong>Tip:</strong> Group 18 elements in order</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: GasGuru</span>
+                        <div class="actions">
+                            <button class="like-btn" data-mnemonic-id="default5">
+                                ❤️ <span>12</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Generated Mnemonics -->
+                {% for mnemonic in mnemonics %}
+                <div class="mnemonic-card">
+                    <h4>📝 {{ mnemonic.title }}</h4>
+                    <p>{{ mnemonic.content }}</p>
+                    <div class="mnemonic-meta">
+                        <span class="author">By: {{ mnemonic.author.username }}</span>
+                        <div class="actions">
+                            <button class="like-btn {% if user in mnemonic.likes.all %}liked{% endif %}" 
+                                    data-mnemonic-id="{{ mnemonic.id }}"
+                                    onclick="handleLikeMnemonic('{{ mnemonic.id }}', this)">
+                                ❤️ <span>{{ mnemonic.like_count }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <p>No user mnemonics yet. Be the first to share one!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Get Django template variables from data attributes
+    const mnemonicsDataElement = document.getElementById('mnemonics-data');
+    const isAuthenticated = mnemonicsDataElement.dataset.authenticated === 'true';
+    const csrfToken = mnemonicsDataElement.dataset.csrfToken;
+
+    function handleLikeMnemonic(mnemonicId, button) {
+        console.log('Like button clicked for mnemonic:', mnemonicId);
+        
+        // Check if it's a default mnemonic (not in database)
+        if (mnemonicId.startsWith('default')) {
+            if (!isAuthenticated) {
+                alert('Please log in to like mnemonics.');
+                return;
+            }
+            
+            // Handle like for default mnemonics (client-side only)
+            const likeCount = button.querySelector('span');
+            let currentLikes = parseInt(likeCount.textContent);
+            
+            if (button.classList.contains('liked')) {
+                currentLikes--;
+                button.classList.remove('liked');
+            } else {
+                currentLikes++;
+                button.classList.add('liked');
+            }
+            
+            likeCount.textContent = currentLikes;
+            return;
+        }
+        
+        // Handle like for database mnemonics
+        if (!isAuthenticated) {
+            alert('Please log in to like mnemonics.');
+            return;
+        }
+        
+        fetch(`/like-mnemonic/${mnemonicId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Like response:', data);
+            const likeCount = button.querySelector('span');
+            likeCount.textContent = data.like_count;
+            
+            if (data.liked) {
+                button.classList.add('liked');
+            } else {
+                button.classList.remove('liked');
+            }
+        })
+        .catch(error => {
+            console.error('Error liking mnemonic:', error);
+            alert('Error liking mnemonic. Please try again.');
+        });
+    }
+
+    // Initialize like buttons for default mnemonics
+    document.addEventListener('DOMContentLoaded', function() {
+        const defaultLikeButtons = document.querySelectorAll('.like-btn[data-mnemonic-id^="default"]');
+        defaultLikeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const mnemonicId = this.dataset.mnemonicId;
+                handleLikeMnemonic(mnemonicId, this);
+            });
+        });
+
+        // Form submission feedback
+        const mnemonicForm = document.getElementById('mnemonic-form');
+        if (mnemonicForm) {
+            mnemonicForm.addEventListener('submit', function(e) {
+                const title = document.getElementById('mnemonic-title').value;
+                const content = document.getElementById('mnemonic-content').value;
+                
+                if (title && content) {
+                    // Show loading state
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = 'Adding...';
+                    submitBtn.disabled = true;
+                    
+                    // Re-enable button after 3 seconds if still on page (fallback)
+                    setTimeout(() => {
+                        if (submitBtn.disabled) {
+                            submitBtn.innerHTML = originalText;
+                            submitBtn.disabled = false;
+                        }
+                    }, 3000);
+                }
+            });
+        }
+    });
+</script>
+
+<style>
+    .mnemonic-tip {
+        font-size: 0.9rem;
+        color: var(--text-light);
+        font-style: italic;
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: rgba(33, 158, 188, 0.1);
+        border-radius: 4px;
+        border-left: 3px solid var(--secondary);
+    }
+    
+    .like-btn.liked {
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+    }
+</style>
+{% endblock %}
